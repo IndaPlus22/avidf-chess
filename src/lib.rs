@@ -89,16 +89,16 @@ impl Game {
     /// move a piece and return the resulting state of the game.
     /// at all times the position of the king should be checked to see if the game is still 
     /// in progress
-    pub fn make_move(&mut self, _from: String, _to: String) -> Option<GameState> {
+    pub fn make_move(&mut self, from: String, to: String) -> Option<GameState> {
 
         use GameState::*;
         let color = self.color;
         if self.get_game_state() == GameState::InProgress {
-            if self.possible_move(&_from).unwrap().contains(&_to) {
-                let _from_ind = self.find_position(&_from);
-                let _to_ind = self.find_position(&_to);
-                self.board[_from_ind.0 as usize][_from_ind.1 as usize] =
-                    self.board[_to_ind.0 as usize][_to_ind.1 as usize];
+            if self.possible_move(&from).unwrap().contains(&to) {
+                let from_index = self.find_position(&from);
+                let to_index = self.find_position(&to);
+                self.board[from_index.0 as usize][from_index.1 as usize] =
+                    self.board[to_index.0 as usize][to_index.1 as usize];
             }
         }
         let king_position = self.king_position(color);
@@ -240,22 +240,22 @@ impl Game {
             None
         }
     }
-    fn relative_position(&self, position: &String, _rank: i8, _file: i8) -> Option<String> {
+    fn relative_position(&self, position: &String, rank: i8, file: i8) -> Option<String> {
         let position = self.find_position(&position);
         let mut output: (usize, usize) = (
-            (position.0 as i8 + _file) as usize,
-            (position.1 as i8 + _rank) as usize,
+            (position.0 as i8 + file) as usize,
+            (position.1 as i8 + rank) as usize,
         );
-        if position.0 as i8 + _file < 0 {
+        if position.0 as i8 + file < 0 {
             output.0 = 0;
         }
-        if position.0 as i8 + _file > 7 {
+        if position.0 as i8 + file > 7 {
             output.0 = 7;
         }
-        if position.1 as i8 + _rank < 0 {
+        if position.1 as i8 + rank < 0 {
             output.1 = 0;
         }
-        if position.1 as i8 + _rank > 7 {
+        if position.1 as i8 + rank > 7 {
             output.1 = 7;
         }
 
@@ -327,15 +327,15 @@ impl Game {
     }
 
     ///For pieces which can make slighlty more complex manuvers we use loops to 
-    /// check whichlegal positions are available
+    /// check which legal positions are available
 
     ///Rook
     /// We check for all legal vertical and horizontal movements
     fn rook_moves(&self, _position: &String) -> Option<Vec<String>> {
-        let position = self.find_position(_position);
+        let pp = self.find_position(_position);
         let mut output: Vec<String> = Vec::new();
 
-        for i in 1..(8 - position.0 ) {
+        for i in 1..(8 - pp.0 ) {
             let right = self.relative_position(_position, 0, i as i8).unwrap();
             if self.piece_position(&right) == None {
                 output.push(right);
@@ -344,7 +344,7 @@ impl Game {
                 break;
             }
         }
-        for i in 1..position.1 {
+        for i in 1..pp.1 {
             let left = self.relative_position(_position, 0, -(i as i8)).unwrap();
             if self.piece_position(&left) == None {
                 output.push(left);
@@ -354,7 +354,7 @@ impl Game {
             }
         }
 
-        for i in 1..(8 - position.1) {
+        for i in 1..(8 - pp.1) {
             let down = self.relative_position(_position, i as i8, 0).unwrap();
             if self.piece_position(&down) == None {
                 output.push(down);
@@ -364,7 +364,7 @@ impl Game {
             }
         }
 
-        for i in 1..position.1 {
+        for i in 1..pp.1 {
             let up = self.relative_position(_position, -(i as i8), 0).unwrap();
             if self.piece_position(&up) == None {
                 output.push(up);
@@ -381,18 +381,19 @@ impl Game {
     ///Quite complicated since it needs to move in three horizontal/diagonal and
     /// then two diagonal/horizontal and make a check for legality of the move
     /// Still unsatisfied with this method and recieved a lot of help in coding it 
-    /// Tried to implement a loop to check for 3d2c (three diagonal an two cross) and 2d3c
+    /// Inform me if you get any novel ideas
+    
     fn knight_moves(&self, _position: &String) -> Option<Vec<String>> {
         let mut output: Vec<String> = Vec::new();
         let relative_rank: [i8; 8] = [1, 1, -1, -1, 2, 2, -2, -2];
         let relative_file: [i8; 8] = [2, -2, 2, -2, 1, -1, 1, -1];
         for i in 0..8 {
-            let pot_position = self
+            let next_position = self
             .relative_position(_position, relative_rank[i], relative_file[i]).unwrap();
-            if self.piece_position(&pot_position) == None || self.piece_position(&pot_position)
+            if self.piece_position(&next_position) == None || self.piece_position(&next_position)
             .unwrap().1 != self.piece_position(&_position).unwrap().1
             {
-                output.push(pot_position);
+                output.push(next_position);
             }
         }
         Some(output)
@@ -627,6 +628,7 @@ impl fmt::Debug for Game {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "")}
     }
+
     #[test]
     fn it_works() {
         assert_eq!(2 + 2, 4);
