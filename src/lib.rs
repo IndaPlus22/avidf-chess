@@ -95,8 +95,8 @@ impl Game {
     pub fn make_move(&mut self, from: String, to: String) -> Option<GameState> {
         
         use GameState::*;
-        let piece = self.piece_position(&from).unwrap().0;
         let color = self.color;
+        let piece = self.piece_position(&from).unwrap().0;
         if self.get_game_state() == GameState::InProgress {
             if self.possible_move(&from).unwrap().contains(&to) {
                 let from_index = self.find_position(&from);
@@ -187,11 +187,11 @@ impl Game {
     }
     fn find_position(&self, position: &String) -> (usize, usize) {
         //split string and turn into seperate variables based on color
-        let rank: char = position[..1].parse().ok().unwrap();
-        let file: usize = position[1..].parse().ok().unwrap();
+        let _rank: char = position[..1].parse().ok().unwrap();
+        let _file: usize = position[1..].parse().ok().unwrap();
         match self.color {
             Color::White => {
-                let rank: usize = match rank {
+                let rank: usize = match _rank {
                     'a' => 0,
                     'b' => 1,
                     'c' => 2,
@@ -202,11 +202,11 @@ impl Game {
                     'h' => 7,
                     _ => 0,
                 };
-                let file = file - 1;
+                let file = _file - 1;
                 (rank, file)
             }
             Color::Black => {
-                let rank: usize = match rank {
+                let rank: usize = match _rank {
                     'a' => 7,
                     'b' => 6,
                     'c' => 5,
@@ -217,7 +217,7 @@ impl Game {
                     'h' => 0,
                     _ => 0,
                 };
-                let file: usize = match file {
+                let file: usize = match _file {
                     1 => 7,
                     2 => 6,
                     3 => 5,
@@ -237,14 +237,14 @@ impl Game {
 
 
     ///The function promotes a pawn into a new higher value piece
-    pub fn set_promotion(&mut self, piece: String) -> () {
+    pub fn promote_piece(&mut self, piece: String) -> () {
         use Piece::*;
         match piece.as_ref() {
-            "queen" => self.promotion = Queen,
-            "bishop" => self.promotion = Bishop,
-            "knight" => self.promotion = Knight,
-            "rook" => self.promotion = Rook,
-            _ => self.promotion = self.promotion,
+            "Rook" => self.promotion = Rook,
+            "Bishop" => self.promotion = Bishop,
+            "Knight" => self.promotion = Knight,
+            "Queen" => self.promotion = Queen,
+            _ => self.promotion = Queen,
         };
         ()
     }
@@ -389,7 +389,6 @@ impl Game {
                 break;
             }
         }
-
         for i in 1..(8 - pp.1) {
             let down = self.relative_position(_position, i as i8, 0).unwrap();
             if self.piece_position(&down) == None {
@@ -399,7 +398,6 @@ impl Game {
                 break;
             }
         }
-
         for i in 1..pp.1 {
             let up = self.relative_position(_position, -(i as i8), 0).unwrap();
             if self.piece_position(&up) == None {
@@ -460,7 +458,6 @@ impl Game {
                 break;
             }
         }
-
         for i in 1..(8 - position.1) {
             let down_right = self.relative_position(_position, i as i8, i as i8).unwrap();
             if self.piece_position(&down_right) == None {
