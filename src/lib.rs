@@ -12,6 +12,7 @@ use gamestate::GameState;
 #[derive(Copy, Clone, PartialEq)]
 pub struct Game {
     board: [[Option<(Piece, Color)>; 8]; 8],
+    promotion: Piece,
     color: Color,
     state: GameState,
 }
@@ -80,7 +81,7 @@ impl Game {
                 ],
             ],
             color: White,
-
+            promotion: Queen,
             state: GameState::InProgress,
         }
     }
@@ -89,9 +90,12 @@ impl Game {
     /// move a piece and return the resulting state of the game.
     /// at all times the position of the king should be checked to see if the game is still 
     /// in progress
+    /// the function also checks if the pawns have reached other 
+    /// side of the board in the index and promotes them
     pub fn make_move(&mut self, from: String, to: String) -> Option<GameState> {
 
         use GameState::*;
+        let piece = self.piece_position(&from).unwrap().0;
         let color = self.color;
         if self.get_game_state() == GameState::InProgress {
             if self.possible_move(&from).unwrap().contains(&to) {
@@ -99,6 +103,20 @@ impl Game {
                 let to_index = self.find_position(&to);
                 self.board[from_index.0 as usize][from_index.1 as usize] =
                     self.board[to_index.0 as usize][to_index.1 as usize];
+                if piece == Piece::Pawn {
+                    match color {
+                        Color::White => {
+                            if to_index.0 == 0 {
+                                self.promote(self.index_to_string(to_index));
+                            }
+                        }
+                        Color::Black => {
+                            if to_index.0 == 7 {
+                                self.promote(self.index_to_string(to_index));
+                            }
+                        }
+                    }
+                }
             }
         }
         let king_position = self.king_position(color);
@@ -216,6 +234,22 @@ impl Game {
         }
     }
 
+
+    pub fn set_promotion(&mut self, _piece: String) -> () {
+        use Piece::*;
+        match _piece.as_ref() {
+            "queen" => self.promotion = Queen,
+            "bishop" => self.promotion = Bishop,
+            "knight" => self.promotion = Knight,
+            "rook" => self.promotion = Rook,
+            _ => self.promotion = self.promotion,
+        };
+        ()
+    }
+    fn promote(&mut self, _position: String) {
+        let index = self.find_position(&_position);
+        self.board[index.0][index.1] = Some((self.promotion, self.color));
+    }
 
     /// Get the current game state.
     pub fn get_game_state(&self) -> GameState {
