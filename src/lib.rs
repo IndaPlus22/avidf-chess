@@ -93,7 +93,7 @@ impl Game {
     /// the function also checks if the pawns have reached other 
     /// side of the board in the index and promotes them
     pub fn make_move(&mut self, from: String, to: String) -> Option<GameState> {
-
+        
         use GameState::*;
         let piece = self.piece_position(&from).unwrap().0;
         let color = self.color;
@@ -235,9 +235,11 @@ impl Game {
     }
 
 
-    pub fn set_promotion(&mut self, _piece: String) -> () {
+
+    ///The function promotes a pawn into a new higher value piece
+    pub fn set_promotion(&mut self, piece: String) -> () {
         use Piece::*;
-        match _piece.as_ref() {
+        match piece.as_ref() {
             "queen" => self.promotion = Queen,
             "bishop" => self.promotion = Bishop,
             "knight" => self.promotion = Knight,
@@ -246,8 +248,8 @@ impl Game {
         };
         ()
     }
-    fn promote(&mut self, _position: String) {
-        let index = self.find_position(&_position);
+    fn promote(&mut self, position: String) {
+        let index = self.find_position(&position);
         self.board[index.0][index.1] = Some((self.promotion, self.color));
     }
 
@@ -676,4 +678,3 @@ impl fmt::Debug for Game {
         assert_eq!(game.get_game_state(), GameState::InProgress);
     }
 
-    
