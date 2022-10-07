@@ -14,7 +14,7 @@ pub struct Game {
     board: [[Option<(Piece, Color)>; 8]; 8],
     promotion: Piece,
     color: Color,
-    state: GameState,
+    gamestate: GameState,
 }
 
 
@@ -23,6 +23,11 @@ pub struct Game {
 ///Since I was really interested in using a hashmap rahter 
 ///than defining every single position on the board I receieved
 ///a slight amount of help and inspiration from the some friends at the higher levels!
+/// 
+/// End result: As I had been warned using hashsets to make the structure created 
+/// a situation in which I was stuck with a singular approach which dose not function 
+/// properly and is very strict
+/// The engine although logicaly sound dosent function properly
 
 
 
@@ -82,8 +87,53 @@ impl Game {
             ],
             color: White,
             promotion: Queen,
-            state: GameState::InProgress,
+            gamestate: GameState::InProgress,
         }
+    }
+
+
+
+    ///We make a function for the gamestate 
+    pub fn get_game_state(&self) -> GameState {
+        self.gamestate
+    }
+
+    /// Checking for checks
+    /// We have to check if king is checked after every position
+    /// and if the king can escape or has been checkmated
+    /// the function gets the position of the king and loops through all the threats.
+
+    fn check_checker(&self, position: &String, color: Color) -> GameState {
+        use GameState::*;
+        let mut output: GameState = InProgress;
+        let mut hash_set: HashSet<String> = HashSet::new();
+        let king_moves: Vec<String> = self.king_moves(&position).unwrap();
+        for rank in 0..=7 {
+            for file in 0..=7 {
+                let piece = self.piece_position(&self
+                    .index_to_string((rank, file)));
+                let piece_position = self.index_to_string((rank, file));
+                if piece != None {
+                    if piece.unwrap().1 != color {
+                        let possible_moves: Vec<String> = self.possible_move(&piece_position).unwrap();
+                        if possible_moves.contains(&position) {
+                            output = Check;
+                            hash_set.insert(possible_moves.into_iter().collect());
+                            hash_set.insert(piece_position);
+                        }
+                    }
+                }
+                else {
+                    hash_set.insert(piece_position);
+                }
+            }
+        }
+        if king_moves.iter().all(|king_move| hash_set
+            .contains(king_move)) && hash_set.contains(position) {
+            output = GameOver;
+        }
+
+        output
     }
 
     /// If the current game state is in progress and the move is legal,
@@ -141,54 +191,32 @@ impl Game {
         king_position
     }
 
-
-    /// Checking for checks
-    /// We have to check if king is checked after every position
-    /// and if the king can escape or has been checkmated
-    /// the function gets the position of the king and loops through all the threats.
-
-    fn check_checker(&self, position: &String, color: Color) -> GameState {
-        use GameState::*;
-        let mut output: GameState = InProgress;
-        let king_moves: Vec<String> = self.king_moves(&position).unwrap();
-        let mut hash_set: HashSet<String> = HashSet::new();
-        for rank in 0..=7 {
-            for file in 0..=7 {
-                let piece = self.piece_position(&self
-                    .index_to_string((rank, file)));
-                let piece_position = self.index_to_string((rank, file));
-                if piece != None {
-                    if piece.unwrap().1 != color {
-                        let position_moves: Vec<String> = self.possible_move(&piece_position).unwrap();
-                        if position_moves.contains(&position) {
-                            output = Check;
-                        }
-                    }
-                }
-                else {
-                    hash_set.insert(piece_position);
-                }
-            }
-        }
-        if king_moves.iter().all(|king_move| hash_set
-            .contains(king_move)) && hash_set.contains(position) {
-            output = GameOver;
-        }
-
-        output
+    ///The function promotes a pawn into a new higher value piece
+    pub fn promote_piece(&mut self, piece: String) -> () {
+        use Piece::*;
+        match piece.as_ref() {
+            "Rook" => self.promotion = Rook,
+            "Bishop" => self.promotion = Bishop,
+            "Knight" => self.promotion = Knight,
+            "Queen" => self.promotion = Queen,
+            _ => self.promotion = Queen,
+        };
+        ()
+    }
+    fn promote(&mut self, position: String) {
+        let index = self.find_position(&position);
+        self.board[index.0][index.1] = Some((self.promotion, self.color));
     }
 
-    
-
     fn piece_position(&self, position: &String) -> Option<(Piece, Color)> {
-        //Get index for position and return whatever is on that index
         let position = self.find_position(position);
         self.board[position.1 as usize][position.0 as usize]
     }
+
     fn find_position(&self, position: &String) -> (usize, usize) {
-        //split string and turn into seperate variables based on color
         let _rank: char = position[..1].parse().ok().unwrap();
         let _file: usize = position[1..].parse().ok().unwrap();
+        // Make arrays upside down
         match self.color {
             Color::White => {
                 let rank: usize = match _rank {
@@ -234,29 +262,6 @@ impl Game {
         }
     }
 
-
-
-    ///The function promotes a pawn into a new higher value piece
-    pub fn promote_piece(&mut self, piece: String) -> () {
-        use Piece::*;
-        match piece.as_ref() {
-            "Rook" => self.promotion = Rook,
-            "Bishop" => self.promotion = Bishop,
-            "Knight" => self.promotion = Knight,
-            "Queen" => self.promotion = Queen,
-            _ => self.promotion = Queen,
-        };
-        ()
-    }
-    fn promote(&mut self, position: String) {
-        let index = self.find_position(&position);
-        self.board[index.0][index.1] = Some((self.promotion, self.color));
-    }
-
-    /// Get the current game state.
-    pub fn get_game_state(&self) -> GameState {
-        self.state
-    }
 
     /// If a piece is standing on the given tile, return all possible
     /// new positions of that piece. Don't forget to the rules for check.
@@ -504,7 +509,6 @@ impl Game {
                 break;
             }
         }
-
         for i in 1..(8 - position.1) {
             let down_right = self.relative_position(_position, i as i8, i as i8).unwrap();
             if self.piece_position(&down_right) == None {
@@ -541,7 +545,6 @@ impl Game {
                 break;
             }
         }
-
         for i in 1..(8 - position.1) {
             let down = self.relative_position(_position, i as i8, 0).unwrap();
             if self.piece_position(&down) == None {
@@ -551,7 +554,6 @@ impl Game {
                 break;
             }
         }
-
         for i in 1..position.1 {
             let up = self.relative_position(_position, -(i as i8), 0).unwrap();
             if self.piece_position(&up) == None {
@@ -608,28 +610,8 @@ impl Game {
 /// | R  Kn B  K  Q  B  Kn R |
 /// |:----------------------:|
 
-    pub fn print(&self) {
-        let mut output: String = String::new();
-        let board = self.board;
-        output.push_str("|:----------------------:|");
-        output.push_str(" A B C D E F G H \n");
-        for rank in 0..7 {
-            for file in 0..7 {
-                output.push_str("|");
-                if file == 7 {
-                    output.push_str(&rank.to_string());
-                    output.push_str("\n");
-                }
-                output += &self.symbol(board[2][2]);
-                if rank == 7 {
-                    output.push_str("")
-                }
-            }
-            output.push_str("|:----------------------:|");
-        }
-    }
 
-    fn symbol(&self, input: Option<(Piece, Color)>) -> String {
+    fn board_output(&self, input: Option<(Piece, Color)>) -> String {
         use Color::*;
         use Piece::*;
         match input {
@@ -649,6 +631,28 @@ impl Game {
             None => format!("{}", "*"),
         }
     }
+
+    pub fn print(&self) {
+        let mut output: String = String::new();
+        let board = self.board;
+        output.push_str("|:----------------------:|");
+        output.push_str(" A B C D E F G H \n");
+        for rank in 0..7 {
+            for file in 0..7 {
+                output.push_str("|");
+                if file == 7 {
+                    output.push_str(&rank.to_string());
+                    output.push_str("\n");
+                }
+                output += &self.board_output(board[2][2]);
+                if rank == 7 {
+                    output.push_str("")
+                }
+            }
+            output.push_str("|:----------------------:|");
+        }
+    }
+
 
 }
 
@@ -674,4 +678,3 @@ impl fmt::Debug for Game {
 
         assert_eq!(game.get_game_state(), GameState::InProgress);
     }
-
