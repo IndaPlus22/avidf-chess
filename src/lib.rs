@@ -20,7 +20,7 @@ pub struct Game {
 
 
 ///This is a basic chess program with basic capabilities
-///Since I was really interested in using a hashmap rahter 
+///Since I was really interested in using a hashset rahter  
 ///than defining every single position on the board I receieved
 ///a slight amount of help and inspiration from the some friends at the higher levels!
 /// 
@@ -99,14 +99,15 @@ impl Game {
     }
 
     /// Checking for checks
-    /// We have to check if king is checked after every position
-    /// and if the king can escape or has been checkmated
+    /// We have to check if king is checked after every turn
+    /// and if it has been checked whether the king can escape or has been checkmated
     /// the function gets the position of the king and loops through all the threats.
+    /// if the king has been checkmated the state will change to game over
 
     fn check_checker(&self, position: &String, color: Color) -> GameState {
         use GameState::*;
         let mut output: GameState = InProgress;
-        let mut hash_set: HashSet<String> = HashSet::new();
+        let mut _index: HashSet<String> = HashSet::new();
         let king_moves: Vec<String> = self.king_moves(&position).unwrap();
         for rank in 0..=7 {
             for file in 0..=7 {
@@ -118,18 +119,18 @@ impl Game {
                         let possible_moves: Vec<String> = self.possible_move(&piece_position).unwrap();
                         if possible_moves.contains(&position) {
                             output = Check;
-                            hash_set.insert(possible_moves.into_iter().collect());
-                            hash_set.insert(piece_position);
+                            _index.insert(possible_moves.into_iter().collect());
+                            _index.insert(piece_position);
                         }
                     }
                 }
                 else {
-                    hash_set.insert(piece_position);
+                    _index.insert(piece_position);
                 }
             }
         }
-        if king_moves.iter().all(|king_move| hash_set
-            .contains(king_move)) && hash_set.contains(position) {
+        if king_moves.iter().all(|king_move| _index
+            .contains(king_move)) && _index.contains(position) {
             output = GameOver;
         }
 
